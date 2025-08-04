@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>📚 Read Book | BookVerse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gradient-to-br from-indigo-100 via-white to-blue-100 text-gray-800 min-h-screen"
+  >
+    <!-- Header -->
+    <header
+      class="backdrop-blur-lg bg-white/70 border-b border-gray-200 shadow-sm p-6"
+    >
+      <h1 class="text-2xl font-extrabold text-blue-700 tracking-tight">
+        📖 BookVerse Reader
+      </h1>
+    </header>
+
+    <!-- Main -->
+    <main class="max-w-5xl mx-auto p-6">
+      <!-- Book Info -->
+      <div
+        class="bg-white/60 backdrop-blur-xl shadow-xl rounded-2xl p-6 mb-8 border border-gray-200"
+      >
+        <h2 id="book-title" class="text-3xl font-bold text-blue-900 mb-1"></h2>
+        <p id="book-author" class="text-md text-gray-700 italic mb-4"></p>
+
+        <!-- Book Viewer -->
+        <div
+          class="rounded-xl overflow-hidden border border-gray-300 shadow-lg transition-all hover:shadow-2xl"
+        >
+          <iframe
+            id="book-viewer"
+            src=""
+            width="100%"
+            height="600px"
+            class="w-full rounded"
+          ></iframe>
+        </div>
+
+        <!-- Bookmark Button -->
+        <button
+          id="bookmark-btn"
+          class="mt-4 text-blue-600 font-semibold hover:underline transition"
+        >
+          🔖 Bookmark
+        </button>
+      </div>
+
+      <!-- Reviews Section -->
+      <section
+        class="bg-white/60 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-gray-200"
+      >
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-2xl font-bold text-indigo-700">📝 Reviews</h3>
+          <div id="avg-rating" class="text-sm text-gray-600"></div>
+        </div>
+
+        <!-- Review Form -->
+        <div
+          id="review-form"
+          class="hidden mb-6 bg-white/80 p-5 rounded-xl border border-gray-300 shadow-sm"
+        >
+          <div class="flex flex-col md:flex-row items-center md:gap-4 mb-4">
+            <label class="font-medium text-gray-700">Rating:</label>
+            <select
+              id="review-rating"
+              class="mt-2 md:mt-0 p-2 rounded-md border border-gray-300 focus:ring-blue-400 focus:border-blue-400"
+            >
+              <option value="5">★★★★★</option>
+              <option value="4">★★★★☆</option>
+              <option value="3">★★★☆☆</option>
+              <option value="2">★★☆☆☆</option>
+              <option value="1">★☆☆☆☆</option>
+            </select>
+          </div>
+          <textarea
+            id="review-comment"
+            class="w-full p-3 rounded-md border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 transition"
+            rows="3"
+            placeholder="Write your thoughts about this book..."
+          ></textarea>
+          <button
+            onclick="submitReview()"
+            class="mt-4 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-2 px-5 rounded-lg shadow-md hover:shadow-lg transition-all"
+          >
+            💬 Submit Review
+          </button>
+        </div>
+
+        <!-- Review List -->
+        <div id="reviews-container" class="space-y-4"></div>
+      </section>
+    </main>
+
+    <!-- Scripts -->
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const bookId = new URLSearchParams(location.search).get("id");
+        if (!bookId) {
+          document.body.innerHTML =
+            "<p class='p-6 text-red-500 text-center text-xl font-semibold'>Invalid Book ID</p>";
+          return;
+        }
+
+        // Load book data
+        try {
+          const res = await fetch(`http://localhost:3000/api/books/${bookId}`);
+          const book = await res.json();
+
+          document.getElementById("book-title").innerText = book.title;
+          document.getElementById("book-author").innerText = "By " + book.author;
+          document.getElementById("book-viewer").src =
+            "http://localhost:3000" + book.file_path;
+        } catch (err) {
+          console.error("Error loading book:", err);
+        }
+
+        // Check user
+        let user = null;
+        try {
+          user = JSON.parse(localStorage.getItem("user"));
+        } catch (e) {
+          console.warn("User not logged in or malformed JSON.");
+        }
+
+        if (user && user.id) {
+          document.getElementById("review-form").classList.remove("hidden");
+        }
+
+        // Load reviews
+        async function loadReviews() {
+          try {
+            const res = await fetch(
+              `http://localhost:3000/api/reviews/${bookId}`
+            );
+            const reviews = await res.json();
+            const container = document.getElementById("reviews-container");
+            const avgRatingBox = document.getElementById("avg-rating");
+
+            if (reviews.length === 0) {
+              container.innerHTML = `<p class="text-gray-500 italic">No reviews yet.</p>`;
+              avgRatingBox.textContent = "";
+              return;
+            }
+
+            // Calculate average rating
+            const avg =
+              reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+            avgRatingBox.innerHTML = `⭐ ${avg.toFixed(1)} out of 5 (${reviews.length} reviews)`;
+
+            container.innerHTML = reviews
+              .map((r) => {
+                const initials = r.user_name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2);
+                return `
+          <div class="bg-white shadow rounded-lg p-4 flex gap-4 items-start">
+            <div class="w-10 h-10 flex-shrink-0 bg-indigo-500 text-white flex items-center justify-center rounded-full font-bold">
+              ${initials}
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                <p class="font-semibold text-gray-800">${r.user_name}</p>
+                <p class="text-sm text-gray-500">${new Date(
+                  r.created_at
+                ).toLocaleDateString()}</p>
+              </div>
+              <p class="text-yellow-500 text-sm">
+                ${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}
+              </p>
+              <p class="text-gray-700 mt-1 italic">"${r.comment}"</p>
+            </div>
+          </div>
+        `;
+              })
+              .join("");
+          } catch (err) {
+            console.error("Failed to load reviews:", err);
+          }
+        }
+
+        // Submit review
+        async function submitReview() {
+          const rating = parseInt(
+            document.getElementById("review-rating").value
+          );
+          const comment = document.getElementById("review-comment").value;
+
+          if (!user || !user.id)
+            return alert("You must be logged in to submit a review.");
+
+          try {
+            const res = await fetch("http://localhost:3000/api/reviews", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                user_id: user.id,
+                book_id: bookId,
+                rating,
+                comment,
+              }),
+            });
+
+            const result = await res.json();
+            alert(result.message);
+            loadReviews();
+          } catch (err) {
+            alert("Failed to submit review");
+            console.error(err);
+          }
+        }
+
+        window.submitReview = submitReview;
+        loadReviews();
+
+        // Bookmark logic
+        const bookmarkBtn = document.getElementById("bookmark-btn");
+        if (bookmarkBtn) {
+          bookmarkBtn.addEventListener("click", async () => {
+            if (!user || !user.id) {
+              alert("Login required to bookmark.");
+              return;
+            }
+
+            try {
+              const res = await fetch("http://localhost:3000/api/bookmarks", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_id: user.id, book_id: bookId }),
+              });
+
+              const result = await res.json();
+              alert(result.message || "Bookmarked!");
+            } catch (err) {
+              console.error("Bookmark failed:", err);
+              alert("Failed to bookmark.");
+            }
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

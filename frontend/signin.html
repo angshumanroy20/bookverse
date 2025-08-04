@@ -1,0 +1,85 @@
+<!-- /frontend/signin.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white shadow-xl rounded-2xl p-8 space-y-6">
+      <h1 class="text-3xl font-bold text-center text-gray-800">Welcome Back</h1>
+
+      <form id="signin-form" class="space-y-5">
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700"
+            >Email Address</label
+          >
+          <input
+            type="email"
+            id="email"
+            placeholder="you@example.com"
+            class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700"
+            >Password</label
+          >
+          <input
+            type="password"
+            id="password"
+            placeholder="password"
+            class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition duration-200"
+        >
+          Sign In
+        </button>
+      </form>
+
+      <p class="text-center text-sm text-gray-600">
+        Don't have an account?
+        <a href="signup.html" class="text-blue-600 hover:underline"
+          >Create one</a
+        >
+      </p>
+    </div>
+
+    <script>
+      document
+        .getElementById("signin-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const email = document.getElementById("email").value;
+          const password = document.getElementById("password").value;
+
+          const res = await fetch("http://localhost:3000/api/auth/signin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const data = await res.json();
+          if (res.ok) {
+            // ✅ Save only the token string
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("user", JSON.stringify(data.user));
+
+            alert("Login successful!");
+            window.location.href = "index.html";
+          } else {
+            alert(data.error || "Login failed");
+          }
+        });
+    </script>
+  </body>
+</html>

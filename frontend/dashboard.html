@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>📊 Dashboard | BookVerse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        transition: background 0.3s ease, color 0.3s ease;
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-radius: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      [data-theme="dark"] body {
+        background: #1a1a2e;
+        color: #e4e4f0;
+      }
+      [data-theme="dark"] .glass {
+        background: rgba(30, 30, 47, 0.6);
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+      [data-theme="dark"] .text-indigo-700 {
+        color: #a5b4fc !important;
+      }
+      [data-theme="dark"] .text-yellow-600 {
+        color: #fde68a !important;
+      }
+      [data-theme="dark"] .text-purple-700 {
+        color: #d8b4fe !important;
+      }
+    </style>
+  </head>
+
+  <body class="flex flex-col md:flex-row min-h-screen overflow-x-hidden">
+    <!-- Sidebar -->
+    <aside
+      id="sidebar"
+      class="w-64 md:w-72 bg-white dark:bg-gray-900 shadow-lg p-6 glass md:rounded-none rounded-2xl md:relative fixed inset-y-0 left-0 z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col justify-between"
+    >
+      <div>
+        <div class="flex justify-between items-center md:hidden mb-6">
+          <h1 class="text-xl font-bold text-indigo-700 dark:text-indigo-300">
+            📘 BookVerse
+          </h1>
+          <button
+            id="sidebar-close"
+            class="text-lg text-gray-700 dark:text-gray-300"
+          >
+            ✖
+          </button>
+        </div>
+        <h1
+          class="text-2xl font-extrabold text-indigo-700 dark:text-indigo-300 mb-10 hidden md:block text-center"
+        >
+          📘 BookVerse
+        </h1>
+        <nav class="space-y-4">
+          <a
+            href="#uploaded"
+            class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-800 transition"
+          >
+            <span class="text-xl">📚</span>
+            <span class="font-medium">Uploaded Books</span>
+          </a>
+          <a
+            href="#bookmarks"
+            class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-yellow-100 dark:hover:bg-yellow-800 transition"
+          >
+            <span class="text-xl">🔖</span>
+            <span class="font-medium">Bookmarks</span>
+          </a>
+          <a
+            href="#reviews"
+            class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-purple-100 dark:hover:bg-purple-800 transition"
+          >
+            <span class="text-xl">💬</span>
+            <span class="font-medium">Reviews</span>
+          </a>
+        </nav>
+      </div>
+      <div class="flex justify-between items-center mt-10">
+        <button id="theme-toggle" class="text-2xl" title="Toggle Dark Mode">
+          🌞
+        </button>
+        <a href="index.html" class="text-indigo-500 hover:underline text-sm"
+          >← Home</a
+        >
+      </div>
+    </aside>
+
+    <!-- Topbar for mobile -->
+    <header
+      class="md:hidden flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow z-50"
+    >
+      <button
+        id="sidebar-toggle"
+        class="text-2xl text-indigo-600 dark:text-indigo-300"
+      >
+        ☰
+      </button>
+      <button id="theme-toggle-mobile" class="text-xl" title="Toggle Dark Mode">
+        🌞
+      </button>
+    </header>
+
+    <!-- Content -->
+    <main
+      class="flex-1 overflow-y-auto p-6 md:p-10 bg-gradient-to-br from-gray-50 to-indigo-100 dark:from-gray-800 dark:to-gray-900 space-y-16"
+    >
+      <section id="uploaded">
+        <h2
+          class="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mb-4 border-b border-indigo-300 dark:border-indigo-500 pb-2"
+        >
+          📚 Your Uploaded Books
+        </h2>
+        <div
+          id="uploaded-books"
+          class="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+        ></div>
+      </section>
+
+      <section id="bookmarks">
+        <h2
+          class="text-2xl font-bold text-yellow-600 dark:text-yellow-300 mb-4 border-b border-yellow-300 pb-2"
+        >
+          🔖 Your Bookmarks
+        </h2>
+        <div
+          id="bookmarked-books"
+          class="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+        ></div>
+      </section>
+
+      <section id="reviews">
+        <h2
+          class="text-2xl font-bold text-purple-700 dark:text-purple-300 mb-4 border-b border-purple-300 pb-2"
+        >
+          💬 Your Reviews
+        </h2>
+        <div id="user-reviews" class="space-y-6"></div>
+      </section>
+    </main>
+
+    <!-- Overlay (for mobile sidebar) -->
+    <div
+      id="overlay"
+      class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"
+    ></div>
+
+    <!-- Script -->
+    <script>
+      const htmlEl = document.documentElement;
+      const themeButtons = [
+        document.getElementById("theme-toggle"),
+        document.getElementById("theme-toggle-mobile"),
+      ];
+
+      function toggleEmoji(theme) {
+        themeButtons.forEach(
+          (btn) => (btn.textContent = theme === "dark" ? "🌙" : "🌞")
+        );
+      }
+
+      function applyTheme(theme) {
+        htmlEl.setAttribute("data-theme", theme);
+        localStorage.setItem("theme", theme);
+        toggleEmoji(theme);
+      }
+
+      const storedTheme = localStorage.getItem("theme") || "light";
+      applyTheme(storedTheme);
+
+      themeButtons.forEach((btn) => {
+        if (btn) {
+          btn.addEventListener("click", () => {
+            const current = htmlEl.getAttribute("data-theme");
+            applyTheme(current === "dark" ? "light" : "dark");
+          });
+        }
+      });
+
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("overlay");
+      const sidebarToggleBtn = document.getElementById("sidebar-toggle");
+      const sidebarCloseBtn = document.getElementById("sidebar-close");
+
+      function openSidebar() {
+        sidebar.classList.remove("-translate-x-full");
+        overlay.classList.remove("hidden");
+      }
+
+      function closeSidebar() {
+        sidebar.classList.add("-translate-x-full");
+        overlay.classList.add("hidden");
+      }
+
+      let sidebarOpen = false;
+
+      sidebarToggleBtn?.addEventListener("click", () => {
+        sidebarOpen ? closeSidebar() : openSidebar();
+        sidebarOpen = !sidebarOpen;
+      });
+
+      sidebarCloseBtn?.addEventListener("click", () => {
+        closeSidebar();
+        sidebarOpen = false;
+      });
+
+      overlay?.addEventListener("click", () => {
+        closeSidebar();
+        sidebarOpen = false;
+      });
+
+      // Token logic & content population
+      function isTokenExpired(token) {
+        try {
+          const [, payload] = token.split(".");
+          const decoded = JSON.parse(atob(payload));
+          return decoded.exp * 1000 < Date.now();
+        } catch {
+          return true;
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        const token = localStorage.getItem("token");
+        const user = JSON.parse(localStorage.getItem("user") || "null");
+
+        if (!token || !user?.id || isTokenExpired(token)) {
+          localStorage.clear();
+          alert("Session expired. Please sign in again.");
+          return (window.location.href = "signin.html");
+        }
+
+        const headers = { Authorization: "Bearer " + token };
+
+        try {
+          const res = await fetch(
+            `http://localhost:3000/api/users/${user.id}/books`,
+            { headers }
+          );
+          const books = await res.json();
+          const container = document.getElementById("uploaded-books");
+          container.innerHTML = books.length
+            ? books
+                .map(
+                  (book) => `
+                <a href="book.html?id=${book.id}" class="glass p-5 shadow hover:shadow-xl transition block rounded-xl border border-indigo-200 hover:scale-[1.03] transform duration-300">
+                  <h3 class="text-lg font-semibold text-indigo-800 dark:text-indigo-200">${book.title}</h3>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">By ${book.author}</p>
+                </a>`
+                )
+                .join("")
+            : `<p class="italic text-gray-500 dark:text-gray-400">No books uploaded.</p>`;
+        } catch (err) {
+          console.error("Uploaded books error", err);
+        }
+
+        try {
+          const res = await fetch(
+            `http://localhost:3000/api/users/${user.id}/bookmarks`,
+            { headers }
+          );
+          const bookmarks = await res.json();
+          const container = document.getElementById("bookmarked-books");
+          container.innerHTML = bookmarks.length
+            ? bookmarks
+                .map(
+                  (book) => `
+                <a href="book.html?id=${book.id}" class="glass p-5 shadow hover:shadow-xl transition block rounded-xl border border-yellow-200 hover:scale-[1.03] transform duration-300">
+                  <h3 class="text-lg font-semibold text-yellow-700 dark:text-yellow-300">${book.title}</h3>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">By ${book.author}</p>
+                </a>`
+                )
+                .join("")
+            : `<p class="italic text-gray-500 dark:text-gray-400">No bookmarks yet.</p>`;
+        } catch (err) {
+          console.error("Bookmarks error", err);
+        }
+
+        try {
+          const res = await fetch(
+            `http://localhost:3000/api/users/${user.id}/reviews`,
+            { headers }
+          );
+          const reviews = await res.json();
+          const container = document.getElementById("user-reviews");
+          container.innerHTML = reviews.length
+            ? reviews
+                .map(
+                  (r) => `
+                <div class="glass p-5 shadow border border-purple-200 rounded-xl hover:shadow-lg transition hover:scale-[1.01]">
+                  <div class="flex justify-between mb-1">
+                    <h4 class="font-bold text-purple-800 dark:text-purple-300">${
+                      r.book_title
+                    }</h4>
+                    <span class="text-yellow-500">${"★".repeat(
+                      r.rating
+                    )}${"☆".repeat(5 - r.rating)}</span>
+                  </div>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 italic">"${
+                    r.comment
+                  }"</p>
+                  <p class="text-xs text-gray-400 mt-1">${new Date(
+                    r.created_at
+                  ).toLocaleDateString()}</p>
+                </div>`
+                )
+                .join("")
+            : `<p class="italic text-gray-500 dark:text-gray-400">You haven’t submitted any reviews yet.</p>`;
+        } catch (err) {
+          console.error("Reviews error", err);
+        }
+      });
+    </script>
+  </body>
+</html>
