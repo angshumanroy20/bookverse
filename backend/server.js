@@ -11,6 +11,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("backend/uploads"));
 
+app.use(express.static("frontend"));
 // Routes
 const authRoutes = require("./routes/auth");
 app.use("/api/auth", authRoutes);
